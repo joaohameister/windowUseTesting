@@ -1,14 +1,18 @@
-#include <WiFi.h>
-#include <WebServer.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
 
-// Variables for setting up the web server for remote visualization of the amount of cycles done
-const char* ssid = "Ciclo";
-const char* password = "itt";
-IPAddress local_ip(192,168,1,1);
-IPAddress gateway(192,168,1,1);
-IPAddress subnet(255,255,255,0);
-WebServer server(80);
+LiquidCrystal_I2C lcd(0x27, 16, 4);
 
+byte custom[8] = {
+  0b00111,
+  0b00101,
+  0b00111,
+  0b00000,
+  0b00000,
+  0b00000,
+  0b00000,
+  0b00000
+};
 // Auxiliar variables to keep track of how many times it completed a cycle
 int count = 0;
 int maxPerCycle = 5;
@@ -45,15 +49,17 @@ void setup() {
   pinMode(relayFw, OUTPUT);
   pinMode(relayBw, OUTPUT);
 
-  // Setting up the web server
-  WiFi.softAP(ssid, password);
-  WiFi.softAPConfig(local_ip, gateway, subnet);
-  delay(100);
+  // LCD setup
+  analogReference(INTERNAL);
+  lcd.init();           
+  lcd.backlight(); 
+  lcd.createChar(5, custom);
 }
 
 void loop() {
   // Code for the manual control mode when the "swAutoManual" is set to HIGH
   while (digitalRead(swAutoManual) == HIGH) {
+    lcd.print("Modo manual");
     digitalWrite(relayBw, HIGH);
     digitalWrite(relayFw, HIGH);
     
@@ -65,11 +71,17 @@ void loop() {
       if (digitalRead(swManualForward) == HIGH) {
         digitalWrite(relayBw, HIGH);
         digitalWrite(relayFw, LOW);
+        lcd.clear();
+        lcd.home();
+        lcd.print("Modo manual  <-----");
       }
 
       else if (digitalRead(swManualBackward) == HIGH) {
         digitalWrite(relayBw, LOW);
         digitalWrite(relayFw, HIGH);
+        lcd.clear();
+        lcd.home();
+        lcd.print("Modo manual  ----->");
       }
 
       else {
@@ -82,6 +94,14 @@ void loop() {
     do{
     int aux = 0;
     while (count < maxPerCycle) {
+      lcd.clear();
+      lcd.home();
+      lcd.print("Modo de ensaio");
+      lcd.setCursor(0, 2);
+      lcd.print("Número de ciclos: " + count);
+      lcd.setCursor(0, 3);
+      lcd.print("Etapas concluídas: " + cyclesCompleted);
+
       if (aux == 0) {
         digitalWrite(relayFw, LOW);
         digitalWrite(relayBw, HIGH);
@@ -105,39 +125,16 @@ void loop() {
     
     digitalWrite(relayBw, HIGH);
     digitalWrite(relayFw, HIGH);
+    tone(10, 2000);
+    Serial.println("Tone");
+    delay(100);
+    noTone(10);
+    Serial.println("noTone");
+    delay(100);
     if(digitalRead(swManualForward) == HIGH){
       count = 0;
       cyclesCompleted += 1;
       Serial.println(cyclesCompleted);
     }
   }while (digitalRead(swAutoManual) == LOW);
-}
-
-void handle_NotFound(){
-  server.send(404, "text/plain", "Not found");
-}
-
-String SendHTML(uint8_t led1stat,uint8_t led2stat){
-  String ptr = "<!DOCTYPE html> <html>\n";
-  ptr +="<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=no\">\n";
-  ptr +="<title>Número de ciclos: </title>\n";
-  ptr +="<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}\n";
-  ptr +="body{margin-top: 50px;} h1 {color: #444444;margin: 50px auto 30px;} h3 {color: #444444;margin-bottom: 50px;}\n";
-  ptr +=".button {display: block;width: 80px;background-color: #3498db;border: none;color: white;padding: 13px 30px;text-decoration: none;font-size: 25px;margin: 0px auto 35px;cursor: pointer;border-radius: 4px;}\n";
-  ptr +=".button-on {background-color: #3498db;}\n";
-  ptr +=".button-on:active {background-color: #2980b9;}\n";
-  ptr +=".button-off {background-color: #34495e;}\n";
-  ptr +=".button-off:active {background-color: #2c3e50;}\n";
-  ptr +="p {font-size: 14px;color: #888;margin-bottom: 10px;}\n";
-  ptr +="</style>\n";
-  ptr +="</head>\n";
-  ptr +="<body>\n";
-  ptr +="<h1>ESP32 Web Server</h1>\n";
-  ptr +="<h3>Using Access Point(AP) Mode</h3>\n";
-  
-  ptr +="<p>" + String(count) + "</p><a class=\"button button-off\" href=\"/led1off\">OFF</a>\n";
-  
-  ptr +="<p>" + String(cyclesCompleted) + "</p><a class=\"button button-on\" href=\"/led1on\">ON</a>\n";
-
-  return ptr;
 }
