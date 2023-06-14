@@ -24,14 +24,13 @@ const int swManualBackward = 3;
 const int swAutoManual = 4;
 const int swAutoStart = 5;
 
-// Digital ports for the relays
-const int relayFw = 6;
-const int relayBw = 7;
-
 // Digital ports for the magnetic sensors
-const int sensorFront = 8;
-const int sensorBack = 9;
+const int sensorFront = 6;
+const int sensorBack = 7;
 
+// Digital ports for the relays
+const int relayFw = 8;
+const int relayBw = 9;
 // Digital port for the 12v buzzer used as an alarm
 const int buzzerAlarm = 10;
 
@@ -50,9 +49,8 @@ void setup() {
   pinMode(relayBw, OUTPUT);
 
   // LCD setup
-  analogReference(INTERNAL);
-  lcd.init();           
-  lcd.backlight(); 
+  lcd.init();
+  lcd.backlight();
   lcd.createChar(5, custom);
 }
 
@@ -62,23 +60,21 @@ void loop() {
     lcd.print("Modo manual");
     digitalWrite(relayBw, HIGH);
     digitalWrite(relayFw, HIGH);
-    
+
     // Read the manual control switches and checks if the magnetic sensors are reading HIGH before doing so
     if (digitalRead(sensorBack) == HIGH || digitalRead(sensorFront) == HIGH) {
       digitalWrite(relayBw, HIGH);
       digitalWrite(relayFw, HIGH);
     } else {
       if (digitalRead(swManualForward) == HIGH) {
-        digitalWrite(relayBw, HIGH);
-        digitalWrite(relayFw, LOW);
+        goForward();
         lcd.clear();
         lcd.home();
         lcd.print("Modo manual  <-----");
       }
 
       else if (digitalRead(swManualBackward) == HIGH) {
-        digitalWrite(relayBw, LOW);
-        digitalWrite(relayFw, HIGH);
+        goBackwards();
         lcd.clear();
         lcd.home();
         lcd.print("Modo manual  ----->");
@@ -90,8 +86,8 @@ void loop() {
       }
     }
   }
-    // Code for the automatic mode when the swAutoManual reads LOW
-    do{
+  // Code for the automatic mode when the swAutoManual reads LOW
+  do {
     int aux = 0;
     while (count < maxPerCycle) {
       lcd.clear();
@@ -103,15 +99,13 @@ void loop() {
       lcd.print("Etapas concluídas: " + cyclesCompleted);
 
       if (aux == 0) {
-        digitalWrite(relayFw, LOW);
-        digitalWrite(relayBw, HIGH);
+        goForward();
         if (digitalRead(sensorFront) == HIGH) {
           aux = 1;
         }
       }
       if (aux == 1) {
-        digitalWrite(relayFw, HIGH);
-        digitalWrite(relayBw, LOW);
+        goBackwards();
         if (digitalRead(sensorBack) == HIGH) {
           count += 1;
           aux = 0;
@@ -122,19 +116,35 @@ void loop() {
         break;
       }
     }
-    
-    digitalWrite(relayBw, HIGH);
-    digitalWrite(relayFw, HIGH);
-    tone(10, 2000);
-    Serial.println("Tone");
-    delay(100);
-    noTone(10);
-    Serial.println("noTone");
-    delay(100);
-    if(digitalRead(swManualForward) == HIGH){
+
+    ringTheAlarm();
+    if (digitalRead(swAutoStart) == HIGH) {
       count = 0;
       cyclesCompleted += 1;
       Serial.println(cyclesCompleted);
     }
-  }while (digitalRead(swAutoManual) == LOW);
+  } while (digitalRead(swAutoManual) == LOW);
+}
+
+// Rings the alarm
+void ringTheAlarm() {
+  digitalWrite(relayBw, HIGH);
+  digitalWrite(relayFw, HIGH);
+  tone(10, 2000);
+  Serial.println("Tone");
+  delay(100);
+  noTone(10);
+  delay(100);
+}
+
+// Goes forward
+void goForward() {
+  digitalWrite(relayBw, HIGH);
+  digitalWrite(relayFw, LOW);
+}
+
+// Goes backwards
+void goBackwards() {
+  digitalWrite(relayBw, LOW);
+  digitalWrite(relayFw, HIGH);
 }
