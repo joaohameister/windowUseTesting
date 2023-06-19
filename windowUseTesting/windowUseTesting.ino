@@ -33,6 +33,8 @@ const int relayFw = 8;
 const int relayBw = 9;
 // Digital port for the 12v buzzer used as an alarm
 const int buzzerAlarm = 10;
+// Safety pin
+const int safety = 11;
 
 void setup() {
   // Initiating all digital ports
@@ -48,7 +50,9 @@ void setup() {
   pinMode(relayFw, OUTPUT);
   pinMode(relayBw, OUTPUT);
 
-  // LCD setup
+  pinMode(safety, INPUT);
+
+    // LCD setup
   lcd.init();
   lcd.backlight();
   lcd.createChar(5, custom);
@@ -113,7 +117,20 @@ void loop() {
         }
       }
       if (digitalRead(swAutoManual) == HIGH) {
+
         break;
+      }
+
+      while (digitalRead(safety) == LOW) {
+        lcd.clear();
+        lcd.home();
+        lcd.print("SISTEMA DE ");
+        lcd.setCursor(0, 2);
+        lcd.print("SEGURANÇA");
+        lcd.setCursor(0, 3);
+        lcd.print("ACIONADO");
+        ringTheAlarm();
+
       }
     }
 
