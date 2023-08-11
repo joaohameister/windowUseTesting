@@ -15,26 +15,26 @@ byte custom[8] = {
 };
 // Auxiliar variables to keep track of how many times it completed a cycle
 int count = 0;
-int maxPerCycle = 5;
+int maxPerCycle = 1000;
 int cyclesCompleted = 0;
 
 // Digital ports for the switches
-const int swManualForward = 2;
-const int swManualBackward = 3;
-const int swAutoManual = 4;
-const int swAutoStart = 5;
+const int swManualForward = 32;
+const int swManualBackward = 33;
+const int swAutoManual = 34;
+const int swAutoStart = 35;
 
 // Digital ports for the magnetic sensors
-const int sensorFront = 6;
-const int sensorBack = 7;
+const int sensorFront = 26;
+const int sensorBack = 27;
 
 // Digital ports for the relays
-const int relayFw = 8;
-const int relayBw = 9;
+const int relayFw = 18;
+const int relayBw = 19;
 // Digital port for the 12v buzzer used as an alarm
-const int buzzerAlarm = 10;
+const int buzzerAlarm = 12;
 // Safety pin
-const int safety = 11;
+const int safety = 13;
 
 void setup() {
   // Initiating all digital ports
